@@ -58,7 +58,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-xs text-muted uppercase tracking-wide font-mono mb-1.5">
-              Geslo
+              Password
             </label>
             <input
               type="password"
@@ -82,14 +82,14 @@ export default function LoginPage() {
             className="w-full bg-accent text-bg font-display text-xl py-4 rounded-xl hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            PRIJAVA
+            LOGIN
           </button>
         </form>
 
         <p className="text-center text-sm text-muted mt-6">
-          Nimaš računa?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/register" className="text-accent hover:underline">
-            Registracija
+            Sign up
           </Link>
         </p>
       </div>

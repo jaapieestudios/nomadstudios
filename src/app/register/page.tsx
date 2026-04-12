@@ -36,7 +36,7 @@ export default function RegisterPage() {
     });
 
     if (authError || !authData.user) {
-      setError(authError?.message ?? "Registracija ni uspela");
+      setError(authError?.message ?? "Registration failed");
       setLoading(false);
       return;
     }
@@ -55,7 +55,7 @@ export default function RegisterPage() {
     if (profileError) {
       setError(
         profileError.message.includes("unique")
-          ? "Ta username je že zaseden. Izberi drugega."
+          ? "That username is already taken. Please choose another."
           : profileError.message
       );
       setLoading(false);
@@ -73,13 +73,13 @@ export default function RegisterPage() {
           <Link href="/" className="font-display text-3xl text-accent tracking-wide">
             NOMAD STUDIOS
           </Link>
-          <p className="text-muted text-sm mt-2">Ustvari artist profil</p>
+          <p className="text-muted text-sm mt-2">Create your artist profile</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs text-muted uppercase tracking-wide font-mono mb-1.5">
-              Ime (prikazano na profilu)
+              Display name
             </label>
             <input
               name="full_name"
@@ -94,7 +94,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="block text-xs text-muted uppercase tracking-wide font-mono mb-1.5">
-              Username (URL profila)
+              Username (your profile URL)
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-sm">
@@ -114,7 +114,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="block text-xs text-muted uppercase tracking-wide font-mono mb-1.5">
-              Instagram handle (opcijsko)
+              Instagram handle (optional)
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-sm">@</span>
@@ -146,7 +146,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="block text-xs text-muted uppercase tracking-wide font-mono mb-1.5">
-              Geslo
+              Password
             </label>
             <input
               name="password"
@@ -155,7 +155,7 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               minLength={6}
-              placeholder="min. 6 znakov"
+              placeholder="min. 6 characters"
               className="w-full bg-card border border-stroke rounded-xl px-4 py-3 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
             />
           </div>
@@ -172,14 +172,14 @@ export default function RegisterPage() {
             className="w-full bg-accent text-bg font-display text-xl py-4 rounded-xl hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            REGISTRACIJA
+            CREATE ACCOUNT
           </button>
         </form>
 
         <p className="text-center text-sm text-muted mt-6">
-          Že imaš račun?{" "}
+          Already have an account?{" "}
           <Link href="/login" className="text-accent hover:underline">
-            Prijava
+            Log in
           </Link>
         </p>
       </div>
