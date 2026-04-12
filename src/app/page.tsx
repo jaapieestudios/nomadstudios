@@ -51,13 +51,21 @@ export default async function DiscoverPage({
           <span className="font-display text-2xl tracking-wide text-accent">
             NOMAD STUDIOS
           </span>
-          <Link
-            href="/map"
-            className="flex items-center gap-1.5 text-xs text-muted hover:text-accent transition-colors font-mono"
-          >
-            <Map className="w-4 h-4" />
-            Map
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/map"
+              className="flex items-center gap-1.5 text-xs text-muted hover:text-accent transition-colors font-mono"
+            >
+              <Map className="w-4 h-4" />
+              Map
+            </Link>
+            <Link
+              href="/login"
+              className="text-xs text-muted hover:text-accent transition-colors font-mono"
+            >
+              Artist login
+            </Link>
+          </div>
         </div>
       </nav>
 
