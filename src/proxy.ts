@@ -25,8 +25,23 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Protect dashboard routes
+  if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Redirect logged-in users away from login/register
+  if (
+    user &&
+    (request.nextUrl.pathname === "/login" ||
+      request.nextUrl.pathname === "/register")
+  ) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
   return supabaseResponse;
 }

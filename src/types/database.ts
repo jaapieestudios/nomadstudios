@@ -10,6 +10,8 @@ export interface Artist {
   styles: string[];
   contact_type: "instagram" | "whatsapp" | "email" | "custom" | null;
   contact_value: string | null;
+  user_id: string | null;
+  subscription_tier: "free" | "pro";
   created_at: string;
 }
 
