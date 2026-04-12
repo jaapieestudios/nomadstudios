@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git --yes)",
+      "Bash(where node:*)",
+      "Bash(where npm:*)",
+      "Bash(where npx:*)",
+      "Bash(npm --version)",
+      "Read(//usr/local/**)",
+      "Read(//c/Users/prija/.nvm/versions/**)",
+      "Bash(ls /opt/)",
+      "Bash(export PATH=\"$PATH:/mnt/c/Program Files/nodejs\")"
+    ]
+  }
+}
