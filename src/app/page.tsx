@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+
+export const revalidate = 60; // re-fetch at most every 60 seconds
 import { ArtistCard } from "@/components/ArtistCard";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterBar } from "@/components/FilterBar";
@@ -22,7 +24,7 @@ export default async function DiscoverPage({
 
   let artistQuery = supabase
     .from("artists")
-    .select("*, tour_dates(*), portfolio_images(*), reviews(*)");
+    .select("*, tour_dates(*), portfolio_images(id, image_url, order_index), reviews(id, rating)");
 
   if (params.style) {
     artistQuery = artistQuery.contains("styles", [params.style]);
