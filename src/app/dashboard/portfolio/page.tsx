@@ -14,6 +14,7 @@ interface PortfolioImage {
 
 export default function PortfolioPage() {
   const [images, setImages] = useState<PortfolioImage[]>([]);
+  const [artistId, setArtistId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -36,6 +37,8 @@ export default function PortfolioPage() {
       .single();
     if (!artist) return;
 
+    setArtistId(artist.id);
+
     const { data } = await supabase
       .from("portfolio_images")
       .select("*")
@@ -48,37 +51,54 @@ export default function PortfolioPage() {
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
+    if (files.length === 0 || !artistId) return;
     setUploading(true);
     setError(null);
 
+    const supabase = createClient();
+    const newImages: PortfolioImage[] = [];
+    const nextIndex = images.length;
+
     try {
-      const formData = new FormData();
-      files.forEach((file) => formData.append("files", file));
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = file.name.split(".").pop();
+        const path = `${artistId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      const res = await fetch("/api/dashboard/portfolio", {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
+        // Upload directly from browser to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from("portfolio")
+          .upload(path, file, { contentType: file.type });
 
-      const json = await res.json();
-      if (!res.ok) {
-        setError(`Upload failed (${res.status}): ${json.error ?? "unknown error"}`);
-      } else if (!json.images || json.images.length === 0) {
-        setError("Upload failed: no images were saved.");
-      } else {
-        setImages((prev) => [...prev, ...json.images]);
+        if (uploadError) {
+          setError(`Upload failed: ${uploadError.message}`);
+          break;
+        }
+
+        const { data: { publicUrl } } = supabase.storage.from("portfolio").getPublicUrl(path);
+
+        // Save record to DB via API (just the URL, no file)
+        const res = await fetch("/api/dashboard/portfolio/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image_url: publicUrl, order_index: nextIndex + i }),
+        });
+
+        if (!res.ok) {
+          const json = await res.json();
+          setError(`Save failed: ${json.error ?? "unknown"}`);
+          break;
+        }
+
+        const row = await res.json();
+        newImages.push(row);
+      }
+
+      if (newImages.length > 0) {
+        setImages((prev) => [...prev, ...newImages]);
       }
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        setError("Upload timed out after 15s. Try a smaller image.");
-      } else {
-        setError(`Network error: ${err instanceof Error ? err.message : "unknown"}`);
-      }
+      setError(`Error: ${err instanceof Error ? err.message : "unknown"}`);
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -88,7 +108,6 @@ export default function PortfolioPage() {
   async function handleDelete(id: string) {
     if (!confirm("Delete this image?")) return;
     setDeleting(id);
-
     const res = await fetch(`/api/dashboard/portfolio/${id}`, { method: "DELETE" });
     if (res.ok) {
       setImages((prev) => prev.filter((img) => img.id !== id));
