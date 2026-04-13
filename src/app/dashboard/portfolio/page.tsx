@@ -56,10 +56,14 @@ export default function PortfolioPage() {
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
       const res = await fetch("/api/dashboard/portfolio", {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
 
       const json = await res.json();
       if (!res.ok) {
@@ -70,7 +74,11 @@ export default function PortfolioPage() {
         setImages((prev) => [...prev, ...json.images]);
       }
     } catch (err) {
-      setError(`Network error: ${err instanceof Error ? err.message : "unknown"}`);
+      if (err instanceof Error && err.name === "AbortError") {
+        setError("Upload timed out after 15s. Try a smaller image.");
+      } else {
+        setError(`Network error: ${err instanceof Error ? err.message : "unknown"}`);
+      }
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
