@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { adminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -31,18 +32,23 @@ export async function POST(request: NextRequest) {
 
   let nextIndex = (existing?.[0]?.order_index ?? -1) + 1;
   const inserted: { id: string; image_url: string; style: null; order_index: number }[] = [];
+  const errors: string[] = [];
 
   for (const file of files) {
     const ext = file.name.split(".").pop();
     const path = `${artist.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
+    // Use admin client for storage to bypass RLS
+    const { error: uploadError } = await adminClient.storage
       .from("portfolio")
-      .upload(path, file);
+      .upload(path, file, { contentType: file.type });
 
-    if (uploadError) continue;
+    if (uploadError) {
+      errors.push(`Upload failed: ${uploadError.message}`);
+      continue;
+    }
 
-    const { data: { publicUrl } } = supabase.storage.from("portfolio").getPublicUrl(path);
+    const { data: { publicUrl } } = adminClient.storage.from("portfolio").getPublicUrl(path);
 
     const { data: row, error: insertError } = await supabase
       .from("portfolio_images")
@@ -55,9 +61,15 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (!insertError && row) {
+    if (insertError) {
+      errors.push(`DB insert failed: ${insertError.message}`);
+    } else if (row) {
       inserted.push(row);
     }
+  }
+
+  if (inserted.length === 0 && errors.length > 0) {
+    return NextResponse.json({ error: errors[0] }, { status: 500 });
   }
 
   return NextResponse.json({ images: inserted }, { status: 201 });

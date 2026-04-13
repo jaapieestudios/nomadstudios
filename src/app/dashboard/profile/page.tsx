@@ -87,25 +87,19 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !artistId) return;
     setUploadingAvatar(true);
+    setError(null);
 
-    const supabase = createClient();
-    const ext = file.name.split(".").pop();
-    const path = `${artistId}.${ext}`;
+    const fd = new FormData();
+    fd.append("file", file);
 
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, { upsert: true });
+    const res = await fetch("/api/dashboard/avatar", { method: "POST", body: fd });
+    const json = await res.json();
 
-    if (uploadError) {
-      setError(uploadError.message);
-      setUploadingAvatar(false);
-      return;
+    if (!res.ok) {
+      setError(json.error ?? "Avatar upload failed");
+    } else {
+      setAvatarUrl(json.url);
     }
-
-    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-
-    await supabase.from("artists").update({ avatar_url: publicUrl }).eq("id", artistId);
-    setAvatarUrl(publicUrl);
     setUploadingAvatar(false);
   }
 
