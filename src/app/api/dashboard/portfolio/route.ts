@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { adminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
+  try {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -73,4 +74,8 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ images: inserted }, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown server error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

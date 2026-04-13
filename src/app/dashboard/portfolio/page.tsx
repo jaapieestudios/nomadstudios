@@ -52,25 +52,29 @@ export default function PortfolioPage() {
     setUploading(true);
     setError(null);
 
-    const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
+    try {
+      const formData = new FormData();
+      files.forEach((file) => formData.append("files", file));
 
-    const res = await fetch("/api/dashboard/portfolio", {
-      method: "POST",
-      body: formData,
-    });
+      const res = await fetch("/api/dashboard/portfolio", {
+        method: "POST",
+        body: formData,
+      });
 
-    const json = await res.json();
-    if (!res.ok) {
-      setError(`Upload failed (${res.status}): ${json.error ?? "unknown error"}`);
-    } else if (!json.images || json.images.length === 0) {
-      setError("Upload failed: no images were saved. Check Vercel logs.");
-    } else {
-      setImages((prev) => [...prev, ...json.images]);
+      const json = await res.json();
+      if (!res.ok) {
+        setError(`Upload failed (${res.status}): ${json.error ?? "unknown error"}`);
+      } else if (!json.images || json.images.length === 0) {
+        setError("Upload failed: no images were saved.");
+      } else {
+        setImages((prev) => [...prev, ...json.images]);
+      }
+    } catch (err) {
+      setError(`Network error: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
-
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = "";
   }
 
   async function handleDelete(id: string) {
