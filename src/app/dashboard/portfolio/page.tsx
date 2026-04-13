@@ -62,7 +62,9 @@ export default function PortfolioPage() {
 
     const json = await res.json();
     if (!res.ok) {
-      setError(json.error ?? "Upload failed");
+      setError(`Upload failed (${res.status}): ${json.error ?? "unknown error"}`);
+    } else if (!json.images || json.images.length === 0) {
+      setError("Upload failed: no images were saved. Check Vercel logs.");
     } else {
       setImages((prev) => [...prev, ...json.images]);
     }
