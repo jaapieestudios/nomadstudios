@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin, CheckCircle } from "lucide-react";
 
 interface TourDateFormData {
   city: string;
@@ -26,7 +26,7 @@ const emptyForm: TourDateFormData = {
   venue_name: "",
   date_from: "",
   date_to: "",
-  total_slots: 10,
+  total_slots: 5,
   lat: "",
   lng: "",
 };
@@ -35,15 +35,58 @@ export default function TourDateForm({ initialData, mode }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<TourDateFormData>(initialData ?? emptyForm);
   const [loading, setLoading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocoded, setGeocoded] = useState(!!initialData?.lat);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: name === "total_slots" ? Number(value) : value }));
+    // Reset geocode if city/country changes
+    if (name === "city" || name === "country") {
+      setGeocoded(false);
+      setGeocodeError(null);
+    }
+  }
+
+  async function handleGeocode() {
+    if (!form.city || !form.country) return;
+    setGeocoding(true);
+    setGeocodeError(null);
+
+    const query = form.venue_name
+      ? `${form.venue_name}, ${form.city}, ${form.country}`
+      : `${form.city}, ${form.country}`;
+
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      const data = await res.json();
+
+      if (data.length === 0) {
+        setGeocodeError("Location not found. Try a different spelling.");
+      } else {
+        setForm((f) => ({ ...f, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }));
+        setGeocoded(true);
+      }
+    } catch {
+      setGeocodeError("Could not reach location service. Check your connection.");
+    }
+
+    setGeocoding(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!form.lat || !form.lng) {
+      setError('Click "Find location" to set the map pin before saving.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -85,50 +128,106 @@ export default function TourDateForm({ initialData, mode }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>City</label>
-          <input name="city" type="text" value={form.city} onChange={handleChange} required placeholder="Berlin" className={inputClass} />
+          <input
+            name="city"
+            type="text"
+            value={form.city}
+            onChange={handleChange}
+            required
+            placeholder="Berlin"
+            className={inputClass}
+          />
         </div>
         <div>
           <label className={labelClass}>Country</label>
-          <input name="country" type="text" value={form.country} onChange={handleChange} required placeholder="Germany" className={inputClass} />
+          <input
+            name="country"
+            type="text"
+            value={form.country}
+            onChange={handleChange}
+            required
+            placeholder="Germany"
+            className={inputClass}
+          />
         </div>
       </div>
 
       <div>
         <label className={labelClass}>Venue / Studio (optional)</label>
-        <input name="venue_name" type="text" value={form.venue_name} onChange={handleChange} placeholder="Studio Name" className={inputClass} />
+        <input
+          name="venue_name"
+          type="text"
+          value={form.venue_name}
+          onChange={handleChange}
+          placeholder="Studio Name"
+          className={inputClass}
+        />
+      </div>
+
+      {/* Geocode button */}
+      <div>
+        <button
+          type="button"
+          onClick={handleGeocode}
+          disabled={geocoding || !form.city || !form.country}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-mono transition-colors disabled:opacity-40 ${
+            geocoded
+              ? "border-green-400/40 text-green-400 bg-green-400/10"
+              : "border-stroke text-muted hover:text-white hover:border-white/30"
+          }`}
+        >
+          {geocoding ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : geocoded ? (
+            <CheckCircle className="w-4 h-4" />
+          ) : (
+            <MapPin className="w-4 h-4" />
+          )}
+          {geocoding ? "Finding location..." : geocoded ? "Location found" : "Find location"}
+        </button>
+        {geocodeError && (
+          <p className="text-xs text-orange mt-1.5">{geocodeError}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Date from</label>
-          <input name="date_from" type="date" value={form.date_from} onChange={handleChange} required className={inputClass} />
+          <input
+            name="date_from"
+            type="date"
+            value={form.date_from}
+            onChange={handleChange}
+            required
+            className={inputClass}
+          />
         </div>
         <div>
           <label className={labelClass}>Date to</label>
-          <input name="date_to" type="date" value={form.date_to} onChange={handleChange} required className={inputClass} />
+          <input
+            name="date_to"
+            type="date"
+            value={form.date_to}
+            onChange={handleChange}
+            required
+            className={inputClass}
+          />
         </div>
       </div>
 
       <div>
         <label className={labelClass}>Total slots</label>
-        <input name="total_slots" type="number" min={1} max={100} value={form.total_slots} onChange={handleChange} required className={inputClass} />
+        <input
+          name="total_slots"
+          type="number"
+          min={1}
+          max={100}
+          value={form.total_slots}
+          onChange={handleChange}
+          required
+          className={inputClass}
+        />
       </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Latitude</label>
-          <input name="lat" type="number" step="any" value={form.lat} onChange={handleChange} required placeholder="52.52" className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Longitude</label>
-          <input name="lng" type="number" step="any" value={form.lng} onChange={handleChange} required placeholder="13.405" className={inputClass} />
-        </div>
-      </div>
-
-      <p className="text-xs text-muted font-mono">
-        Tip: find coordinates at{" "}
-        <span className="text-accent">maps.google.com</span> → right-click → "What&apos;s here?"
-      </p>
 
       {error && (
         <p className="text-sm text-orange bg-orange/10 border border-orange/20 rounded-xl px-4 py-3">
